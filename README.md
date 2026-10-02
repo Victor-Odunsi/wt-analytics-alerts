@@ -67,5 +67,10 @@ bash deploy.sh           # build + deploy
 bash deploy.sh --run     # trigger a manual run
 ```
 
-See the end of `deploy.sh`'s output for the Cloud Scheduler command to wire up a daily trigger —
-scheduled a little after 05:00 UTC, when the upstream marts finish rebuilding.
+See the end of `deploy.sh`'s output for the Cloud Scheduler command. Currently one runs daily:
+
+- `wt-analytics-alerts-daily-betika` — `0 7 * * *` `Africa/Lagos` (7am WAT / 9am EAT for Nick in
+  Kenya), a little after the upstream marts finish rebuilding at ~05:00 UTC. A second daily
+  trigger (midnight WAT) was tried and removed 2026-09-29 — since the mart only rebuilds once a
+  day and `main.py` always evaluates "yesterday (UTC)" relative to run time, a second same-day run
+  just re-checks identical data and double-sends any alert.

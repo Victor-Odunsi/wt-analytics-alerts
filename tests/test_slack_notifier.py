@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import pytest
 
 from alerts.rules import AnomalyResult
@@ -30,6 +32,19 @@ def test_message_with_insight_labels_it_clearly():
     assert "AI-generated" in payload["text"]
     # the raw per-event stats line must still be present alongside the narrative
     assert "confirmation_deposit_placed" in payload["text"]
+
+
+def test_message_includes_generated_at_timestamp():
+    ts = datetime(2026, 9, 29, 6, 3, tzinfo=timezone.utc)
+    payload = build_message("betika", [_anomaly()], generated_at=ts)
+    assert "Generated 2026-09-29 06:03 UTC" in payload["text"]
+
+
+def test_message_defaults_generated_at_to_now_when_omitted():
+    before = datetime.now(timezone.utc)
+    payload = build_message("betika", [_anomaly()])
+    after = datetime.now(timezone.utc)
+    assert before.strftime("%Y-%m-%d") in payload["text"] or after.strftime("%Y-%m-%d") in payload["text"]
 
 
 def test_send_alert_with_no_anomalies_skips_the_api_call(monkeypatch):

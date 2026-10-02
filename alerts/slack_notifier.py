@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime, timezone
 
 import requests
 
@@ -14,8 +15,21 @@ SLACK_POST_MESSAGE_URL = "https://slack.com/api/chat.postMessage"
 DM_RECIPIENT_ENV_VARS = ["DEV_SLACK_DM_USER_ID", "NICK_SLACK_DM_USER_ID"]
 
 
-def build_message(client_id: str, anomalies: list, insight: str | None = None) -> dict:
-    lines = [f"*GA4 event anomalies — {client_id}*"]
+def build_message(
+    client_id: str,
+    anomalies: list,
+    insight: str | None = None,
+    generated_at: datetime | None = None,
+) -> dict:
+    # The underlying mart is daily-grain only (see docs/ga4_daily_marts_schema.md
+    # upstream) — there's no per-event time-of-day to show, each anomaly's `date`
+    # already covers that. What's useful instead is when THIS alert was generated,
+    # so a reader can tell how fresh it is at a glance.
+    generated_at = generated_at or datetime.now(timezone.utc)
+    lines = [
+        f"*GA4 event anomalies — {client_id}*",
+        f"_Generated {generated_at.strftime('%Y-%m-%d %H:%M UTC')}_",
+    ]
     if insight:
         # Labeled explicitly so readers don't mistake the LLM's phrasing for an
         # additional mechanical fact alongside the z_score/pct_change lines below.
